@@ -13,6 +13,8 @@ ID='CT01'
 
 cd /data/NCATS_ifx/data/WES/
 
+bwa mem -t 8 -R "@RG\tID:CT01\tPL:Illumina\tSM:${ID}" /fdb/igenomes/Homo_sapiens/UCSC/hg38/Sequence/BWAIndex/genome.fa <(zcat fastq/${ID}_S1_R1_001.fastq.gz) <(zcat fastq/${ID}_S1_R2_001.fastq.gz) | samtools view -bS - | samtools sort - > ${ID}/${ID}.bam; samtools index ${ID}/${ID}.bam
+
 java -jar /usr/local/apps/picard/2.17.11/picard.jar MarkDuplicates \
   INPUT=${ID}/${ID}.bam \
   OUTPUT=${ID}/${ID}_dedup.bam \
