@@ -2,6 +2,9 @@ samples <- c('CT01','CT02','CT03','CT04', 'CT05','CT06')
 
 # GATK reference genome hg38
 ref <- '/fdb/GATK_resource_bundle/hg38bundle/Homo_sapiens_assembly38.fasta'
+dbsnp <- '/fdb/GATK_resource_bundle/hg38bundle/dbsnp_146.hg38.vcf.gz'
+indels <- '/fdb/GATK_resource_bundle/hg38bundle/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz'
+limit <- '/data/NCATS_ifx/data/WES/hglft_genome_subset.bed'
 
 # Align
 for (i in samples){
@@ -15,10 +18,24 @@ for (i in samples){
   cat('\n\n')
 }
 
+# Base quality score recalibration
+
+for (i in samples){
+  cat('cd /data/NCATS_ifx/data/WES/ && GATK -m 15g BaseRecalibrator -R ',ref,' -I ',i,'/',i,'_dedup.bam -knownSites ',dbsnp,' -knownSites ',indels,' -o ',i,'/',i,'_recal_data.table -L ',limit,' && GATK PrintReads -R ',ref,' -I ',i,'/',i,'_dedup.bam -BQSR ',i,'/',i,'_recal_data.table -o ',i,'/',i,'_recal.bam -L ',limit, sep='')
+  cat('\n\n')
+}
+
 
 # Caller
 for (i in samples){
-  cat('cd /data/NCATS_ifx/data/WES/ && GATK -m 15g HaplotypeCaller -R ',ref,' -I ',i,'/',i,'_dedup.bam -o vcf/',i,'_raw_variants.vcf --genotyping_mode DISCOVERY -stand_call_conf 30 --dbsnp /fdb/GATK_resource_bundle/hg38bundle/dbsnp_146.hg38.vcf.gz -L /data/NCATS_ifx/data/WES/hglft_genome_subset.bed', sep='')
+  cat('cd /data/NCATS_ifx/data/WES/ && GATK -m 15g HaplotypeCaller -R ',ref,' -I ',i,'/',i,'_recal.bam -o vcf/',i,'_raw_variants.vcf --genotyping_mode DISCOVERY -stand_call_conf 30 --dbsnp ',dbsnp,' -L ',limit, sep='')
+  cat('\n\n')
+}
+
+# Split to SNPs or Indels
+
+for (i in samples){
+  cat('cd /data/NCATS_ifx/data/WES/ && GATK -m 15g SelectVariants -R ',ref,' -V vcf/',i,'_raw_variants.vcf -selectType SNP -o vcf/',i,'_SNP_raw.vcf -L ',limit,' && GATK -m 15g -R ',ref,' -V vcf/',i,'_raw_variants.vcf -selectType INDEL -o vcf/',i,'_INDEL_raw.vcf -L ',limit,sep='')
   cat('\n\n')
 }
 
